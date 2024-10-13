@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Teaser Creator</title>
+    <style>
+        :root {
+            --primary-color: #3891e1;
+            --secondary-color: #e4f1fe;
+            --accent-color: #1c6bba;
+            --text-color: #333;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: var(--primary-color);
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            border: 1px solid var(--primary-color);
+            border-radius: 4px;
+        }
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        #generateButton { background-color: var(--primary-color); }
+        #generateButton:hover { background-color: var(--accent-color); }
+        #clearFormButton { background-color: #f44336; }
+        #clearFormButton:hover { background-color: #d32f2f; }
+        #logoPreview {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed var(--primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+        #logoPreview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .preview-container {
+            margin-top: 30px;
+        }
+        .preview-selector {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .preview-selector button {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            margin: 0 10px;
+        }
+        .preview-selector button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .preview {
+            display: none;
+        }
+        .preview.active {
+            display: block;
+        }
+        .job-teaser {
+            border: 1px solid var(--primary-color);
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 400px;
+            margin: 20px auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .job-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .job-logo {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            margin-right: 15px;
+            background-color: white;
+            border-radius: 50%;
+        }
+        .job-title { margin: 0; font-size: 18px; }
+        .job-company-location { margin-top: 5px; font-size: 14px; }
+        .tabs {
+            display: flex;
+            background-color: var(--secondary-color);
+        }
+        .tab {
+            padding: 10px;
+            cursor: pointer;
+            background-color: var(--secondary-color);
+            border: none;
+            flex-grow: 1;
+            color: var(--primary-color);
+        }
+        .tab.active {
+            background-color: white;
+            font-weight: bold;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        .tab-content {
+            padding: 15px;
+            display: none;
+        }
+        .tab-content.active { display: block; }
+        .apply-button {
+            display: block;
+            width: 100%;
+            padding: 12px 0;
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .job-card {
+            padding: 15px;
+        }
+        .job-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        .job-card p {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Job Teaser Creator</h1>
+        <form id="jobForm">
+            <!-- Keep the existing form fields -->
+        </form>
+
+        <div class="preview-container">
+            <div class="preview-selector">
+                <button onclick="showPreview('tabbedPreview')" class="active">Tabbed Preview</button>
+                <button onclick="showPreview('cardPreview')">Job Card Preview</button>
+            </div>
+            <div id="tabbedPreview" class="preview active"></div>
+            <div id="cardPreview" class="preview"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('jobForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            updatePreviews(formData);
+        });
+
+        document.getElementById('clearFormButton').addEventListener('click', function() {
+            document.getElementById('jobForm').reset();
+            document.getElementById('logoPreviewImg').src = '';
+            document.querySelectorAll('.preview').forEach(preview => preview.innerHTML = '');
+        });
+
+        document.getElementById('logoUrl').addEventListener('input', function() {
+            document.getElementById('logoPreviewImg').src = this.value;
+        });
+
+        function updatePreviews(formData) {
+            const tabbedPreviewHTML = generateTabbedPreviewHTML(formData);
+            const cardPreviewHTML = generateCardPreviewHTML(formData);
+            document.getElementById('tabbedPreview').innerHTML = tabbedPreviewHTML;
+            document.getElementById('cardPreview').innerHTML = cardPreviewHTML;
+            initTabs();
+        }
+
+        function generateTabbedPreviewHTML(formData) {
+            const tabs = [
+                { title: formData.get('tab1Title'), content: formData.get('tab1Content') },
+                { title: formData.get('tab2Title'), content: formData.get('tab2Content') },
+                { title: formData.get('tab3Title'), content: formData.get('tab3Content') },
+                { title: formData.get('tab4Title'), content: formData.get('tab4Content') }
+            ];
+
+            return `
+                <div class="job-teaser">
+                    <div class="job-header">
+                        <img src="${formData.get('logoUrl')}" alt="${formData.get('companyName')} Logo" class="job-logo">
+                        <div>
+                            <h2 class="job-title">${formData.get('jobTitle')}</h2>
+                            <div class="job-company-location">${formData.get('companyName')} - ${formData.get('location')}</div>
+                        </div>
+                    </div>
+                    <div class="tabs">
+                        ${tabs.map((tab, index) => `
+                            <button class="tab ${index === 0 ? 'active' : ''}" data-tab="tab${index + 1}">${tab.title}</button>
+                        `).join('')}
+                    </div>
+                    ${tabs.map((tab, index) => `
+                        <div id="tab${index + 1}" class="tab-content ${index === 0 ? 'active' : ''}">
+                            <p>${tab.content.replace(/\n/g, '<br>')}</p>
+                        </div>
+                    `).join('')}
+                    <a href="${formData.get('applyUrl')}" class="apply-button" target="_blank">Apply Now</a>
+                </div>
+            `;
+        }
+
+        function generateCardPreviewHTML(formData) {
+            return `
+                <div class="job-teaser">
+                    <div class="job-header">
+                        <img src="${formData.get('logoUrl')}" alt="${formData.get('companyName')} Logo" class="job-logo">
+                        <div>
+                            <h2 class="job-title">${formData.get('jobTitle')}</h2>
+                            <div class="job-company-location">${formData.get('companyName')} - ${formData.get('location')}</div>
+                        </div>
+                    </div>
+                    <div class="job-card">
+                        <h3>Job Overview</h3>
+                        <p>${formData.get('tab1Content')}</p>
+                        <h3>${formData.get('tab2Title')}</h3>
+                        <p>${formData.get('tab2Content').replace(/\n/g, '<br>')}</p>
+                        <h3>${formData.get('tab3Title')}</h3>
+                        <p>${formData.get('tab3Content').replace(/\n/g, '<br>')}</p>
+                        <h3>${formData.get('tab4Title')}</h3>
+                        <p>${formData.get('tab4Content').replace(/\n/g, '<br>')}</p>
+                    </div>
+                    <a href="${formData.get('applyUrl')}" class="apply-button" target="_blank">Apply Now</a>
+                </div>
+            `;
+        }
+
+        function initTabs() {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            let currentTab = 0;
+
+            function showTab(index) {
+                tabs.forEach(tab => tab.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                tabs[index].classList.add('active');
+                tabContents[index].classList.add('active');
+            }
+
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => {
+                    showTab(index);
+                    clearInterval(autoSwitch);
+                });
+            });
+
+            const autoSwitch = setInterval(() => {
+                currentTab = (currentTab + 1) % tabs.length;
+                showTab(currentTab);
+            }, 3000);
+        }
+
+        function showPreview(previewId) {
+            document.querySelectorAll('.preview').forEach(preview => preview.classList.remove('active'));
+            document.getElementById(previewId).classList.add('active');
+            document.querySelectorAll('.preview-selector button').forEach(button => button.classList.remove('active'));
+            document.querySelector(`.preview-selector button[onclick="showPreview('${previewId}')"]`).classList.add('active');
+        }
+
+        // Generate preview on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('generateButton').click();
+        });
+    </script>
+</body>
+</html>
